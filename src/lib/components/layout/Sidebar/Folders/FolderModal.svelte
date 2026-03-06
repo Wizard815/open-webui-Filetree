@@ -19,6 +19,7 @@
 	export let onSubmit: Function = (e) => {};
 
 	export let folderId = null;
+	export let parentId: string | null = null;
 	export let edit = false;
 
 	let folder = null;
@@ -28,8 +29,12 @@
 	};
 	let data = {
 		system_prompt: '',
-		files: []
+		files: [],
+		inherit_from_parent: false
 	};
+
+	/** When creating a subfolder: false = Primary (own settings), true = Dependent (inherit from parent) */
+	let subfolderConfigMode = 'primary';
 
 	let loading = false;
 
@@ -52,10 +57,20 @@
 			return;
 		}
 
+		const submitData = { ...data };
+		if (parentId && !edit && subfolderConfigMode === 'dependent') {
+			submitData.inherit_from_parent = true;
+			submitData.system_prompt = '';
+			submitData.files = [];
+		} else if (parentId && !edit) {
+			submitData.inherit_from_parent = false;
+		}
+
 		await onSubmit({
 			name,
 			meta,
-			data
+			data: submitData,
+			...(parentId && !edit ? { parent_id: parentId } : {})
 		});
 		show = false;
 		loading = false;
@@ -96,13 +111,20 @@
 
 	$: if (!show && !edit) {
 		name = '';
+		parentId = null;
+		subfolderConfigMode = 'primary';
 		meta = {
 			background_image_url: null
 		};
 		data = {
 			system_prompt: '',
-			files: []
+			files: [],
+			inherit_from_parent: false
 		};
+	}
+	// Top-level folders are always Primary
+	$: if (show && !parentId && !edit) {
+		subfolderConfigMode = 'primary';
 	}
 </script>
 
@@ -110,11 +132,13 @@
 	<div>
 		<div class=" flex justify-between dark:text-gray-300 px-5 pt-4 pb-1">
 			<div class=" text-lg font-medium self-center">
-				{#if edit}
-					{$i18n.t('Edit Folder')}
-				{:else}
-					{$i18n.t('Create Folder')}
-				{/if}
+			{#if edit}
+				{$i18n.t('Edit Folder')}
+			{:else if parentId}
+				{$i18n.t('Create Subfolder')}
+			{:else}
+				{$i18n.t('Create Folder')}
+			{/if}
 			</div>
 			<button
 				class="self-center"
@@ -148,6 +172,34 @@
 							/>
 						</div>
 					</div>
+
+					{#if !edit}
+						<div class="mt-3">
+							<div class="mb-2 text-xs text-gray-500">{$i18n.t('Folder config')}</div>
+							<div class="flex flex-col gap-2">
+								<label class="flex items-center gap-2 cursor-pointer">
+									<input type="radio" name="subfolder-config" value="primary" bind:group={subfolderConfigMode} />
+									<span class="text-sm">{$i18n.t('Primary')}</span>
+									<span class="text-xs text-gray-500">— {$i18n.t('Own system prompt and knowledge')}</span>
+								</label>
+								<label class="flex items-center gap-2 {parentId ? 'cursor-pointer' : 'cursor-not-allowed opacity-70'}">
+									<input
+										type="radio"
+										name="subfolder-config"
+										value="dependent"
+										bind:group={subfolderConfigMode}
+										disabled={!parentId}
+									/>
+									<span class="text-sm">{$i18n.t('Dependent')}</span>
+									<span class="text-xs text-gray-500">
+										— {parentId
+											? $i18n.t('Inherit from parent folder')
+											: $i18n.t('Only for subfolders — use ⋯ on a folder → New Subfolder')}
+									</span>
+								</label>
+							</div>
+						</div>
+					{/if}
 
 					<input
 						id="folder-background-image-input"
@@ -210,6 +262,7 @@
 
 					<hr class=" border-gray-50 dark:border-gray-850/30 my-2.5 w-full" />
 
+					{#if !(parentId && !edit && subfolderConfigMode === 'dependent')}
 					{#if $user?.role === 'admin' || ($user?.permissions.chat?.system_prompt ?? true)}
 						<div class="my-1">
 							<div class="mb-2 text-xs text-gray-500">{$i18n.t('System Prompt')}</div>
@@ -237,6 +290,7 @@
 							</div>
 						</Knowledge>
 					</div>
+					{/if}
 
 					<div class="flex justify-end pt-3 text-sm font-medium gap-1.5">
 						<button

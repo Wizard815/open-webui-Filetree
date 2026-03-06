@@ -1,0 +1,19 @@
+# Use this when Ollama fails with "x509: certificate signed by unknown authority"
+# 1. Get your corporate CA cert (see README-OLLAMA-CERTS.md)
+# 2. Place it at: certs/corporate-ca.crt
+# 3. Run: docker compose -f docker-compose.yaml -f docker-compose.ollama-certs.yaml up -d --build
+
+services:
+  ollama:
+    build:
+      context: .
+      dockerfile: Dockerfile.ollama-certs
+    image: ollama-ollama-with-certs:local
+    pull_policy: if_not_present  # use local cert image, don't pull from registry
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]

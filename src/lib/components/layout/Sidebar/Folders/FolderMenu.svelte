@@ -11,11 +11,15 @@
 	import Pencil from '$lib/components/icons/Pencil.svelte';
 	import Tooltip from '$lib/components/common/Tooltip.svelte';
 	import Download from '$lib/components/icons/Download.svelte';
+	import NewFolderAlt from '$lib/components/icons/NewFolderAlt.svelte';
+	import ChatPlus from '$lib/components/icons/ChatPlus.svelte';
 
 	export let align: 'start' | 'end' = 'start';
 	export let onEdit = () => {};
 	export let onExport = () => {};
 	export let onDelete = () => {};
+	export let onNewSubfolder = () => {};
+	export let onNewChat = () => {};
 
 	let show = false;
 </script>
@@ -41,12 +45,34 @@
 
 	<div slot="content">
 		<DropdownMenu.Content
-			class="w-full max-w-[170px] rounded-2xl px-1 py-1 border border-gray-100  dark:border-gray-800   z-50 bg-white dark:bg-gray-850 dark:text-white shadow-lg"
+			class="w-full max-w-[190px] rounded-2xl px-1 py-1 border border-gray-100  dark:border-gray-800   z-50 bg-white dark:bg-gray-850 dark:text-white shadow-lg"
 			sideOffset={-2}
 			side="bottom"
 			{align}
 			transition={flyAndScale}
 		>
+			<DropdownMenu.Item
+				class="flex gap-2 items-center px-3 py-1.5 text-sm select-none cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-xl"
+				on:click={() => {
+					onNewSubfolder();
+				}}
+			>
+				<NewFolderAlt className="size-4" />
+				<div class="flex items-center">{$i18n.t('New Subfolder')}</div>
+			</DropdownMenu.Item>
+
+			<DropdownMenu.Item
+				class="flex gap-2 items-center px-3 py-1.5 text-sm select-none cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-xl"
+				on:click={() => {
+					onNewChat();
+				}}
+			>
+				<ChatPlus className="size-4" />
+				<div class="flex items-center">{$i18n.t('New Chat')}</div>
+			</DropdownMenu.Item>
+
+			<hr class="border-gray-100 dark:border-gray-800 my-0.5" />
+
 			<DropdownMenu.Item
 				class="flex gap-2 items-center px-3 py-1.5 text-sm select-none cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-xl"
 				on:click={() => {

@@ -69,6 +69,7 @@ class FolderNameIdResponse(BaseModel):
 
 class FolderForm(BaseModel):
     name: str
+    parent_id: Optional[str] = None
     data: Optional[dict] = None
     meta: Optional[dict] = None
     model_config = ConfigDict(extra="allow")
@@ -196,6 +197,27 @@ class FolderTable:
                 .filter_by(parent_id=parent_id, user_id=user_id)
                 .all()
             ]
+
+    def is_ancestor_of(
+        self,
+        folder_id: str,
+        potential_descendant_id: str,
+        user_id: str,
+        db: Optional[Session] = None,
+    ) -> bool:
+        """Check if folder_id is an ancestor of potential_descendant_id (would create a cycle)."""
+        with get_db_context(db) as db:
+            current_id = potential_descendant_id
+            visited = set()
+            while current_id:
+                if current_id in visited:
+                    break
+                if current_id == folder_id:
+                    return True
+                visited.add(current_id)
+                parent = db.query(Folder).filter_by(id=current_id, user_id=user_id).first()
+                current_id = parent.parent_id if parent else None
+            return False
 
     def update_folder_parent_id_by_id_and_user_id(
         self,

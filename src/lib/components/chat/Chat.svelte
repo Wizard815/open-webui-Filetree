@@ -41,6 +41,7 @@
 		terminalServers,
 		functions,
 		selectedFolder,
+		showFolderContentSidebar,
 		pinnedChats,
 		showEmbeds,
 		selectedTerminalId,
@@ -98,6 +99,7 @@
 	import ChatControls from './ChatControls.svelte';
 	import EventConfirmDialog from '../common/ConfirmDialog.svelte';
 	import Placeholder from './Placeholder.svelte';
+	import FolderContentSidebar from './FolderContentSidebar.svelte';
 	import FilesOverlay from './MessageInput/FilesOverlay.svelte';
 	import NotificationToast from '../NotificationToast.svelte';
 	import Spinner from '../common/Spinner.svelte';
@@ -672,6 +674,10 @@
 
 		const selectedFolderSubscribe = selectedFolder.subscribe(async (folder) => {
 			await tick();
+			if (!folder) {
+				showFolderContentSidebar.set(false);
+				return;
+			}
 			if (
 				folder?.data?.model_ids &&
 				JSON.stringify(selectedModels) !== JSON.stringify(folder.data.model_ids)
@@ -2566,23 +2572,26 @@
 	};
 
 	const moveChatHandler = async (chatId, folderId) => {
-		if (chatId && folderId) {
-			const res = await updateChatFolderIdById(localStorage.token, chatId, folderId).catch(
-				(error) => {
-					toast.error(`${error}`);
-					return null;
-				}
-			);
-
-			if (res) {
-				currentChatPage.set(1);
-				await chats.set(await getChatList(localStorage.token, $currentChatPage));
-				await pinnedChats.set(await getPinnedChatList(localStorage.token));
-
-				toast.success($i18n.t('Chat moved successfully'));
-			}
-		} else {
+		if (!chatId) {
 			toast.error($i18n.t('Failed to move chat'));
+			return;
+		}
+
+		const res = await updateChatFolderIdById(
+			localStorage.token,
+			chatId,
+			folderId ?? null
+		).catch((error) => {
+			toast.error(`${error}`);
+			return null;
+		});
+
+		if (res) {
+			currentChatPage.set(1);
+			await chats.set(await getChatList(localStorage.token, $currentChatPage));
+			await pinnedChats.set(await getPinnedChatList(localStorage.token));
+
+			toast.success($i18n.t('Chat moved successfully'));
 		}
 	};
 </script>
@@ -2886,6 +2895,10 @@
 				<Spinner className="size-5" />
 			</div>
 		</div>
+	{/if}
+
+	{#if $selectedFolder}
+		<FolderContentSidebar folder={$selectedFolder} />
 	{/if}
 </div>
 

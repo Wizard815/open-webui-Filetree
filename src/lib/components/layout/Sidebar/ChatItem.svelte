@@ -78,13 +78,12 @@
 	let chat = null;
 
 	let mouseOver = false;
-	let draggable = false;
+	// Allow drag immediately so users can move chats without loading full chat data
+	let draggable = true;
 
 	const loadChat = async () => {
 		if (!chat) {
-			draggable = false;
 			chat = await getChatById(localStorage.token, id);
-			draggable = true;
 		}
 	};
 
@@ -159,29 +158,33 @@
 	};
 
 	const moveChatHandler = async (chatId, folderId) => {
-		if (chatId && folderId) {
-			const res = await updateChatFolderIdById(localStorage.token, chatId, folderId).catch(
-				(error) => {
-					toast.error(`${error}`);
-					return null;
-				}
-			);
-
-			if (res) {
-				currentChatPage.set(1);
-				await chats.set(await getChatList(localStorage.token, $currentChatPage));
-				await pinnedChats.set(await getPinnedChatList(localStorage.token));
-
-				dispatch('change');
-
-				toast.success($i18n.t('Chat moved successfully'));
-			}
-		} else {
+		if (!chatId) {
 			toast.error($i18n.t('Failed to move chat'));
+			return;
+		}
+
+		const res = await updateChatFolderIdById(
+			localStorage.token,
+			chatId,
+			folderId ?? null
+		).catch((error) => {
+			toast.error(`${error}`);
+			return null;
+		});
+
+		if (res) {
+			currentChatPage.set(1);
+			await chats.set(await getChatList(localStorage.token, $currentChatPage));
+			await pinnedChats.set(await getPinnedChatList(localStorage.token));
+
+			dispatch('change');
+
+			toast.success($i18n.t('Chat moved successfully'));
 		}
 	};
 
 	let itemElement;
+	let dragHandleElement;
 
 	let generating = false;
 
@@ -211,7 +214,7 @@
 		);
 
 		dragged = true;
-		itemElement.style.opacity = '0.5'; // Optional: Visual cue to show it's being dragged
+		if (itemElement) itemElement.style.opacity = '0.5';
 	};
 
 	const onDrag = (event) => {
@@ -223,10 +226,8 @@
 
 	const onDragEndHandler = (event) => {
 		event.stopPropagation();
-
-		itemElement.style.opacity = '1'; // Reset visual cue after drag
+		if (itemElement) itemElement.style.opacity = '1';
 		dragged = false;
-
 		onDragEnd(event);
 	};
 
@@ -246,23 +247,23 @@
 	onMount(() => {
 		if (itemElement) {
 			document.addEventListener('click', onClickOutside, true);
-
-			// Event listener for when dragging starts
-			itemElement.addEventListener('dragstart', onDragStart);
-			// Event listener for when dragging occurs (optional)
-			itemElement.addEventListener('drag', onDrag);
-			// Event listener for when dragging ends
-			itemElement.addEventListener('dragend', onDragEndHandler);
+		}
+		// Attach drag to the handle so the link doesn't capture pointer
+		if (dragHandleElement) {
+			dragHandleElement.addEventListener('dragstart', onDragStart);
+			dragHandleElement.addEventListener('drag', onDrag);
+			dragHandleElement.addEventListener('dragend', onDragEndHandler);
 		}
 	});
 
 	onDestroy(() => {
 		if (itemElement) {
 			document.removeEventListener('click', onClickOutside, true);
-
-			itemElement.removeEventListener('dragstart', onDragStart);
-			itemElement.removeEventListener('drag', onDrag);
-			itemElement.removeEventListener('dragend', onDragEndHandler);
+		}
+		if (dragHandleElement) {
+			dragHandleElement.removeEventListener('dragstart', onDragStart);
+			dragHandleElement.removeEventListener('drag', onDrag);
+			dragHandleElement.removeEventListener('dragend', onDragEndHandler);
 		}
 	});
 
@@ -365,9 +366,22 @@
 <div
 	id="sidebar-chat-group"
 	bind:this={itemElement}
-	class=" w-full {className} relative group"
-	draggable={draggable && !confirmEdit}
+	class=" w-full {className} relative group flex items-stretch"
 >
+	{#if !confirmEdit && draggable}
+		<!-- Drag handle: grab here to move chat to another folder -->
+		<div
+			bind:this={dragHandleElement}
+			class="shrink-0 self-center flex items-center pr-0.5 cursor-grab active:cursor-grabbing touch-none text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+			draggable="true"
+			role="button"
+			tabindex="-1"
+			aria-label={$i18n.t('Drag to move chat')}
+			on:click|stopPropagation
+		>
+			<svg class="size-4" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true"><circle cx="5" cy="4" r="1.25"/><circle cx="11" cy="4" r="1.25"/><circle cx="5" cy="8" r="1.25"/><circle cx="11" cy="8" r="1.25"/><circle cx="5" cy="12" r="1.25"/><circle cx="11" cy="12" r="1.25"/></svg>
+		</div>
+	{/if}
 	{#if confirmEdit}
 		<div
 			id="sidebar-chat-item"

@@ -11,6 +11,7 @@
 	export let shiftKey = false;
 
 	export let onDelete = (folderId) => {};
+	export let onCreateSubfolder = (parentId, folderData) => {};
 
 	let folderList = [];
 	// Get the list of folders that have no parent, sorted by name alphabetically
@@ -49,6 +50,7 @@
 		{shiftKey}
 		{onDelete}
 		{onItemMove}
+		{onCreateSubfolder}
 		on:import={(e) => {
 			dispatch('import', e.detail);
 		}}

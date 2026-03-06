@@ -1405,15 +1405,27 @@ async def update_chat_folder_id_by_id(
     db: Session = Depends(get_session),
 ):
     chat = Chats.get_chat_by_id_and_user_id(id, user.id, db=db)
-    if chat:
-        chat = Chats.update_chat_folder_id_by_id_and_user_id(
-            id, user.id, form_data.folder_id, db=db
-        )
-        return ChatResponse(**chat.model_dump())
-    else:
+    if not chat:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail=ERROR_MESSAGES.DEFAULT()
         )
+
+    # If a folder_id is provided, ensure it belongs to the same user
+    # and actually exists before moving the chat.
+    if form_data.folder_id:
+        folder = Folders.get_folder_by_id_and_user_id(
+            form_data.folder_id, user.id, db=db
+        )
+        if not folder:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=ERROR_MESSAGES.DEFAULT("Target folder not found"),
+            )
+
+    chat = Chats.update_chat_folder_id_by_id_and_user_id(
+        id, user.id, form_data.folder_id, db=db
+    )
+    return ChatResponse(**chat.model_dump())
 
 
 ############################

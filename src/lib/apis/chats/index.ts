@@ -331,11 +331,22 @@ export const getAllChats = async (token: string) => {
 	return res;
 };
 
+/**
+ * Normalize search text so the backend understands it. Converts @folder to folder: for "search in folder and subfolders".
+ */
+export function normalizeSearchText(text: string): string {
+	if (!text || !text.trim()) return text;
+	return text
+		.replace(/\b@folder:(\S+)/gi, 'folder:$1')
+		.replace(/\b@folder\s+(\S+)/gi, 'folder:$1')
+		.trim();
+}
+
 export const getChatListBySearchText = async (token: string, text: string, page: number = 1) => {
 	let error = null;
 
 	const searchParams = new URLSearchParams();
-	searchParams.append('text', text);
+	searchParams.append('text', normalizeSearchText(text));
 	searchParams.append('page', `${page}`);
 
 	const res = await fetch(`${WEBUI_API_BASE_URL}/chats/search?${searchParams.toString()}`, {

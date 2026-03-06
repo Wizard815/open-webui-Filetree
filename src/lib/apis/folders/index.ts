@@ -2,6 +2,7 @@ import { WEBUI_API_BASE_URL } from '$lib/constants';
 
 type FolderForm = {
 	name?: string;
+	parent_id?: string | null;
 	data?: Record<string, any>;
 	meta?: Record<string, any>;
 };

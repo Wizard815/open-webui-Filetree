@@ -411,27 +411,41 @@
 
 						<div class="flex items-center">{$i18n.t('Move')}</div>
 					</DropdownMenu.SubTrigger>
-					<DropdownMenu.SubContent
-						class="select-none w-full max-w-[200px] rounded-2xl p-1 z-50 bg-white dark:bg-gray-850 dark:text-white border border-gray-100  dark:border-gray-800 shadow-lg max-h-52 overflow-y-auto scrollbar-hidden"
-						transition={flyAndScale}
-						sideOffset={8}
-					>
-						{#each $folders.sort((a, b) => b.updated_at - a.updated_at) as folder}
-							<DropdownMenu.Item
-								draggable="false"
-								class="flex gap-2 items-center px-3 py-1.5 text-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-xl overflow-hidden"
-								on:click={() => {
-									moveChatHandler(chatId, folder.id);
-								}}
-							>
-								<div class="shrink-0">
-									<Folder />
-								</div>
+			<DropdownMenu.SubContent
+				class="select-none w-full max-w-[200px] rounded-2xl p-1 z-50 bg-white dark:bg-gray-850 dark:text-white border border-gray-100  dark:border-gray-800 shadow-lg max-h-52 overflow-y-auto scrollbar-hidden"
+				transition={flyAndScale}
+				sideOffset={8}
+			>
+				<DropdownMenu.Item
+					draggable="false"
+					class="flex gap-2 items-center px-3 py-1.5 text-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-xl overflow-hidden"
+					on:click={() => {
+						moveChatHandler(chatId, null);
+					}}
+				>
+					<div class="shrink-0">
+						<Folder />
+					</div>
 
-								<div class="truncate">{folder?.name ?? 'Folder'}</div>
-							</DropdownMenu.Item>
-						{/each}
-					</DropdownMenu.SubContent>
+					<div class="truncate">{$i18n.t('No folder')}</div>
+				</DropdownMenu.Item>
+
+				{#each $folders.sort((a, b) => b.updated_at - a.updated_at) as folder}
+					<DropdownMenu.Item
+						draggable="false"
+						class="flex gap-2 items-center px-3 py-1.5 text-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-xl overflow-hidden"
+						on:click={() => {
+							moveChatHandler(chatId, folder.id);
+						}}
+					>
+						<div class="shrink-0">
+							<Folder />
+						</div>
+
+						<div class="truncate">{folder?.name ?? 'Folder'}</div>
+					</DropdownMenu.Item>
+				{/each}
+			</DropdownMenu.SubContent>
 				</DropdownMenu.Sub>
 			{/if}
 

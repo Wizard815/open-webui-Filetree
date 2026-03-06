@@ -142,19 +142,22 @@
 		}
 	};
 
-	const createFolder = async ({ name, data }) => {
+	const createFolder = async ({ name, data, parent_id = null }) => {
 		name = name?.trim();
 		if (!name) {
 			toast.error($i18n.t('Folder name cannot be empty.'));
 			return;
 		}
 
-		const rootFolders = Object.values(folders).filter((folder) => folder.parent_id === null);
-		if (rootFolders.find((folder) => folder.name.toLowerCase() === name.toLowerCase())) {
-			// If a folder with the same name already exists, append a number to the name
+		const siblingFolders = Object.values(folders).filter(
+			(folder) => (folder.parent_id ?? null) === parent_id
+		);
+		if (siblingFolders.find((folder) => folder.name.toLowerCase() === name.toLowerCase())) {
 			let i = 1;
 			while (
-				rootFolders.find((folder) => folder.name.toLowerCase() === `${name} ${i}`.toLowerCase())
+				siblingFolders.find(
+					(folder) => folder.name.toLowerCase() === `${name} ${i}`.toLowerCase()
+				)
 			) {
 				i++;
 			}
@@ -162,13 +165,13 @@
 			name = `${name} ${i}`;
 		}
 
-		// Add a dummy folder to the list to show the user that the folder is being created
 		const tempId = uuidv4();
 		folders = {
 			...folders,
 			tempId: {
 				id: tempId,
 				name: name,
+				parent_id: parent_id,
 				created_at: Date.now(),
 				updated_at: Date.now()
 			}
@@ -176,14 +179,14 @@
 
 		const res = await createNewFolder(localStorage.token, {
 			name,
-			data
+			data,
+			...(parent_id ? { parent_id } : {})
 		}).catch((error) => {
 			toast.error(`${error}`);
 			return null;
 		});
 
 		if (res) {
-			// newFolderId = res.id;
 			await initFolders();
 			showFolders = true;
 		}
@@ -553,7 +556,6 @@
 
 	const newChatHandler = async () => {
 		selectedChatId = null;
-		selectedFolder.set(null);
 
 		if ($user?.role !== 'admin' && $user?.permissions?.chat?.temporary_enforced) {
 			await temporaryChatEnabled.set(true);
@@ -1133,6 +1135,9 @@
 							onDelete={(folderId) => {
 								selectedFolder.set(null);
 								initChatList();
+							}}
+							onCreateSubfolder={async (parentId, folderData) => {
+								await createFolder({ ...folderData, parent_id: parentId });
 							}}
 							on:update={() => {
 								initChatList();

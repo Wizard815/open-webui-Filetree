@@ -58,10 +58,12 @@
 
 	export let onDelete = (e) => {};
 	export let onItemMove = (e) => {};
+	export let onCreateSubfolder = (parentId, folderData) => {};
 
 	let folderElement;
 
 	let showFolderModal = false;
+	let showSubfolderModal = false;
 	let edit = false;
 
 	let draggedOver = false;
@@ -444,6 +446,16 @@
 
 <FolderModal bind:show={showFolderModal} edit={true} {folderId} onSubmit={updateHandler} />
 
+<FolderModal
+	bind:show={showSubfolderModal}
+	parentId={folderId}
+	onSubmit={async (folderData) => {
+		await onCreateSubfolder(folderId, folderData);
+		open = true;
+		showSubfolderModal = false;
+	}}
+/>
+
 {#if dragged && x && y}
 	<DragGhost {x} {y}>
 		<div class=" bg-black/80 backdrop-blur-2xl px-2 py-1 rounded-lg w-fit max-w-40">
@@ -584,6 +596,22 @@
 					class="absolute z-10 right-2 invisible group-hover:visible self-center flex items-center dark:text-gray-300"
 				>
 					<FolderMenu
+						onNewSubfolder={() => {
+							showSubfolderModal = true;
+						}}
+						onNewChat={async () => {
+							const folder = await getFolderById(localStorage.token, folderId).catch((error) => {
+								toast.error(`${error}`);
+								return null;
+							});
+							if (folder) {
+								await selectedFolder.set(folder);
+							}
+							await goto('/');
+							if ($mobile) {
+								showSidebar.set(!$showSidebar);
+							}
+						}}
 						onEdit={() => {
 							showFolderModal = true;
 						}}
@@ -626,6 +654,7 @@
 								parentDragged={dragged}
 								{onItemMove}
 								{onDelete}
+								{onCreateSubfolder}
 								on:import={(e) => {
 									dispatch('import', e.detail);
 								}}

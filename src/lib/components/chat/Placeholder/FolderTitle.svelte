@@ -9,7 +9,7 @@
 
 	import { toast } from 'svelte-sonner';
 
-	import { selectedFolder } from '$lib/stores';
+	import { selectedFolder, showFolderContentSidebar } from '$lib/stores';
 
 	import { deleteFolderById, getFolderById, updateFolderById } from '$lib/apis/folders';
 	import { getChatsByFolderId } from '$lib/apis/chats';
@@ -18,6 +18,8 @@
 
 	import Folder from '$lib/components/icons/Folder.svelte';
 	import XMark from '$lib/components/icons/XMark.svelte';
+	import Document from '$lib/components/icons/Document.svelte';
+	import Tooltip from '$lib/components/common/Tooltip.svelte';
 	import FolderMenu from '$lib/components/layout/Sidebar/Folders/FolderMenu.svelte';
 	import EllipsisHorizontal from '$lib/components/icons/EllipsisHorizontal.svelte';
 	import DeleteConfirmDialog from '$lib/components/common/ConfirmDialog.svelte';
@@ -189,7 +191,16 @@
 			</div>
 		</div>
 
-		<div class="flex items-center translate-x-2.5">
+		<div class="flex items-center gap-1 translate-x-2.5">
+			<Tooltip content={$i18n.t('View folder content (files & images)')}>
+					<button
+						class="p-1.5 dark:hover:bg-gray-850 rounded-full touch-auto text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+						aria-label={$i18n.t('View folder content')}
+						on:click={() => showFolderContentSidebar.set(true)}
+					>
+						<Document className="size-5" strokeWidth="2" />
+					</button>
+				</Tooltip>
 			<FolderMenu
 				align="end"
 				onEdit={() => {

@@ -61,6 +61,8 @@ export const tags = writable([]);
 export const folders = writable([]);
 
 export const selectedFolder = writable(null);
+/** When true, the right-side folder content sidebar (files/images in selected folder) is visible. */
+export const showFolderContentSidebar = writable(false);
 
 export const models: Writable<Model[]> = writable([]);
 

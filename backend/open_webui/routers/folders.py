@@ -118,8 +118,16 @@ def create_folder(
     user=Depends(get_verified_user),
     db: Session = Depends(get_session),
 ):
+    if form_data.parent_id:
+        parent = Folders.get_folder_by_id_and_user_id(form_data.parent_id, user.id, db=db)
+        if not parent:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=ERROR_MESSAGES.DEFAULT("Parent folder not found"),
+            )
+
     folder = Folders.get_folder_by_parent_id_and_user_id_and_name(
-        None, user.id, form_data.name, db=db
+        form_data.parent_id, user.id, form_data.name, db=db
     )
 
     if folder:
@@ -129,7 +137,7 @@ def create_folder(
         )
 
     try:
-        folder = Folders.insert_new_folder(user.id, form_data, db=db)
+        folder = Folders.insert_new_folder(user.id, form_data, parent_id=form_data.parent_id, db=db)
         return folder
     except Exception as e:
         log.exception(e)
@@ -222,11 +230,25 @@ async def update_folder_parent_id_by_id(
 ):
     folder = Folders.get_folder_by_id_and_user_id(id, user.id, db=db)
     if folder:
+        if form_data.parent_id == id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=ERROR_MESSAGES.DEFAULT("Cannot move folder into itself"),
+            )
+
+        if form_data.parent_id and Folders.is_ancestor_of(
+            id, form_data.parent_id, user.id, db=db
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=ERROR_MESSAGES.DEFAULT("Cannot move folder into one of its descendants"),
+            )
+
         existing_folder = Folders.get_folder_by_parent_id_and_user_id_and_name(
             form_data.parent_id, user.id, folder.name, db=db
         )
 
-        if existing_folder:
+        if existing_folder and existing_folder.id != id:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=ERROR_MESSAGES.DEFAULT("Folder already exists"),

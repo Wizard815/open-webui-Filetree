@@ -1,0 +1,10 @@
+# Extend Ollama to add custom CA certificates for corporate proxy environments.
+# Place your corporate CA cert as: ./certs/corporate-ca.crt
+# Then: docker compose -f docker-compose.yaml -f docker-compose.ollama-certs.yaml up -d --build
+
+FROM ollama/ollama:latest
+
+# Create dir and copy CA cert (must exist at build time)
+COPY certs/corporate-ca.crt /usr/local/share/ca-certificates/
+RUN chmod 644 /usr/local/share/ca-certificates/corporate-ca.crt && \
+    update-ca-certificates

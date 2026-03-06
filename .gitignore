@@ -8,6 +8,8 @@ node_modules
 .env
 .env.*
 !.env.example
+# Local corporate/proxy CA certs (see README-OLLAMA-CERTS.md)
+certs/
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 # Byte-compiled / optimized / DLL files

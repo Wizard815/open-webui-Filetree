@@ -32,6 +32,10 @@
 			description: $i18n.t('search for folders')
 		},
 		{
+			name: '@folder',
+			description: $i18n.t('search in folder and subfolders')
+		},
+		{
 			name: 'pinned:',
 			description: $i18n.t('search for pinned chats')
 		},
@@ -94,10 +98,11 @@
 						type: 'tag'
 					};
 				});
-		} else if (lastWord.startsWith('folder:')) {
+		} else if (lastWord.startsWith('folder:') || lastWord.startsWith('@folder')) {
+			const prefixLen = lastWord.startsWith('folder:') ? 7 : 8;
+			const folderName = lastWord.slice(prefixLen).trim();
 			filteredItems = [...$folders]
 				.filter((folder) => {
-					const folderName = lastWord.slice(7);
 					if (folderName) {
 						const id = folder.name.replaceAll(' ', '_').toLowerCase();
 						const folderId = folderName.replaceAll(' ', '_').toLowerCase();
@@ -365,9 +370,11 @@
 									const words = value.split(' ');
 
 									words.pop();
-									words.push(`${option.name}`);
+									// @folder inserts folder: so backend and folder picker work the same
+									const insert = option.name === '@folder' ? 'folder:' : option.name;
+									words.push(insert);
 
-									selectedOption = option.name.replace(':', '');
+									selectedOption = option.name.replace(':', '').replace('@', '');
 
 									value = words.join(' ');
 
